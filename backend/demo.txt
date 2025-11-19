@@ -1,3 +1,0 @@
-password = "123"
-API_KEY = "xyz"
-AWS_SECRET_ACCESS_KEY
