@@ -1,0 +1,51 @@
+name: CI - Step 1
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run hardcoded-password scanner
+        run: |
+          chmod +x scripts/check-hardcoded-passwords.sh
+          ./scripts/check-hardcoded-passwords.sh
+
+  lint:
+    needs: secret-scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Lint frontend (skip if empty)
+        run: |
+          if [ -d "frontend" ] && [ "$(ls -A frontend)" ]; then
+            cd frontend
+            npm ci || true
+            npm run lint || true
+          else
+            echo "Frontend folder empty — skipping lint"
+          fi
+
+      - name: Lint backend (skip if empty)
+        run: |
+          if [ -d "backend" ] && [ "$(ls -A backend)" ]; then
+            cd backend
+            npm ci || true
+            npm run lint || true
+          else
+            echo "Backend folder empty — skipping lint"
+          fi
