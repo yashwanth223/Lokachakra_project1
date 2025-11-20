@@ -3,8 +3,11 @@ set -euo pipefail
 
 echo "🔍 Running hardcoded password & secret scan..."
 
-# Ignore GitHub Actions files (to avoid false positives like ${{ secrets.KEY }})
-EXCLUDE_DIRS="--exclude-dir=.github"
+# Directories to ignore
+EXCLUDE_DIRS="--exclude-dir=.github --exclude-dir=.git"
+
+# Files to ignore (scanner shouldn't scan itself)
+EXCLUDE_FILES="--exclude=scripts/check-hardcoded-passwords.sh"
 
 # Patterns that indicate possible hardcoded secrets
 PATTERNS=(
@@ -22,7 +25,7 @@ PATTERNS=(
 FOUND=0
 
 for PATTERN in "${PATTERNS[@]}"; do
-  MATCHES=$(grep -RniE "$PATTERN" . $EXCLUDE_DIRS || true)
+  MATCHES=$(grep -RniE "$PATTERN" . $EXCLUDE_DIRS $EXCLUDE_FILES || true)
 
   if [ -n "$MATCHES" ]; then
     echo "❌ WARNING: Suspicious pattern found for '$PATTERN':"
