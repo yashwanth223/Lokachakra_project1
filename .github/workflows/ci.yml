@@ -1,4 +1,4 @@
-name: CI - Step 1
+name: CI Pipeline
 
 on:
   push:
@@ -7,20 +7,30 @@ on:
     branches: [ main ]
 
 jobs:
+
+  # --------------------------------------------------
+  # Step 1: Hardcoded secret scan
+  # --------------------------------------------------
   secret-scan:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run hardcoded-password scanner
+      - name: Run hardcoded password scanner
         run: |
           chmod +x scripts/check-hardcoded-passwords.sh
           ./scripts/check-hardcoded-passwords.sh
 
+
+  # --------------------------------------------------
+  # Step 2: Lint frontend and backend
+  # --------------------------------------------------
   lint:
     needs: secret-scan
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -37,7 +47,7 @@ jobs:
             npm ci || true
             npm run lint || true
           else
-            echo "Frontend folder empty — skipping lint"
+            echo "Frontend empty — skipping lint"
           fi
 
       - name: Lint backend (skip if empty)
@@ -47,8 +57,51 @@ jobs:
             npm ci || true
             npm run lint || true
           else
-            echo "Backend folder empty — skipping lint"
+            echo "Backend empty — skipping lint"
           fi
+
+
+  # --------------------------------------------------
+  # Step 3: Build Docker images + Scan with Trivy
+  # --------------------------------------------------
+  docker-build-and-scan:
+    needs: lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build backend image
+        run: |
+          docker build -t backend-image:latest ./backend
+
+      - name: Build frontend image
+        run: |
+          docker build -t frontend-image:latest ./frontend
+
+      - name: Install Trivy
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y wget
+          wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.52.2_Linux-64bit.deb
+          sudo dpkg -i trivy_0.52.2_Linux-64bit.deb
+
+      - name: Scan backend image with Trivy
+        run: |
+          trivy image --severity HIGH,CRITICAL --exit-code 1 backend-image:latest
+
+      - name: Scan frontend image with Trivy
+        run: |
+          trivy image --severity HIGH,CRITICAL --exit-code 1 frontend-image:latest
+
+
+  # --------------------------------------------------
+  # Step 4: Push built images to AWS ECR
+  # --------------------------------------------------
   push-to-ecr:
     needs: docker-build-and-scan
     runs-on: ubuntu-latest
