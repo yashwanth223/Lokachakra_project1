@@ -4,10 +4,10 @@ set -euo pipefail
 echo "🔍 Running hardcoded password & secret scan..."
 
 # Directories to ignore
-EXCLUDE_DIRS="--exclude-dir=.github --exclude-dir=.git"
+EXCLUDE_DIRS="--exclude-dir=.github --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=frontend/dist --exclude-dir=backend/.next"
 
 # Files to ignore (scanner shouldn't scan itself)
-EXCLUDE_FILES="--exclude=scripts/check-hardcoded-passwords.sh"
+EXCLUDE_FILES="--exclude=./scripts/check-hardcoded-passwords.sh"
 
 # Patterns that indicate possible hardcoded secrets
 PATTERNS=(
