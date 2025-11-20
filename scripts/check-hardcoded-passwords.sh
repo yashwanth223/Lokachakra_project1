@@ -1,29 +1,40 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-patterns=(
-  'password\s*=\s*".+?"'
-  'password\s*:\s*".+?"'
-  'secret\s*=\s*".+?"'
-  'passwd\s*=\s*".+?"'
-  '\bpwd\s*='
-  'API_KEY'
-  'AWS_SECRET_ACCESS_KEY'
+echo "🔍 Running hardcoded password & secret scan..."
+
+# Ignore GitHub Actions files (to avoid false positives like ${{ secrets.KEY }})
+EXCLUDE_DIRS="--exclude-dir=.github"
+
+# Patterns that indicate possible hardcoded secrets
+PATTERNS=(
+  "password\s*="
+  "passwd\s*="
+  "secret\s*="
+  "api[_-]?key"
+  "access[_-]?key"
+  "token\s*="
+  "authorization"
+  "aws_access_key_id"
+  "aws_secret_access_key"
 )
 
-found=0
+FOUND=0
 
-for p in "${patterns[@]}"; do
-  # Exclude this script itself
-  if grep -RIn --exclude-dir=.git --exclude="check-hardcoded-passwords.sh" -E "$p" .; then
-    found=1
+for PATTERN in "${PATTERNS[@]}"; do
+  MATCHES=$(grep -RniE "$PATTERN" . $EXCLUDE_DIRS || true)
+
+  if [ -n "$MATCHES" ]; then
+    echo "❌ WARNING: Suspicious pattern found for '$PATTERN':"
+    echo "$MATCHES"
+    FOUND=1
   fi
 done
 
-if [ "$found" -ne 0 ]; then
+if [ "$FOUND" -eq 1 ]; then
   echo "❌ ERROR: Hardcoded secret or password found! Remove it and use GitHub Secrets."
   exit 1
 fi
 
-echo "✅ No hardcoded passwords found."
+echo "✅ No hardcoded secrets found."
 exit 0
