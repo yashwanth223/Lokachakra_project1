@@ -8,80 +8,63 @@ on:
 
 jobs:
 
-  # --------------------------------------------------
-  # Step 1: Hardcoded secret scan
-  # --------------------------------------------------
   secret-scan:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Run hardcoded password scanner
         run: |
           chmod +x scripts/check-hardcoded-passwords.sh
           ./scripts/check-hardcoded-passwords.sh
 
-
-  # --------------------------------------------------
-  # Step 2: Lint frontend and backend
-  # --------------------------------------------------
   lint:
     needs: secret-scan
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Lint frontend (skip if empty)
+      - name: Lint frontend
         run: |
           if [ -d "frontend" ] && [ "$(ls -A frontend)" ]; then
             cd frontend
             npm ci || true
             npm run lint || true
           else
-            echo "Frontend empty — skipping lint"
+            echo "No frontend folder"
           fi
 
-      - name: Lint backend (skip if empty)
+      - name: Lint backend
         run: |
           if [ -d "backend" ] && [ "$(ls -A backend)" ]; then
             cd backend
             npm ci || true
             npm run lint || true
           else
-            echo "Backend empty — skipping lint"
+            echo "No backend folder"
           fi
 
-
-  # --------------------------------------------------
-  # Step 3: Build Docker images + Scan with Trivy
-  # --------------------------------------------------
   docker-build-and-scan:
     needs: lint
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
       - name: Build backend image
-        run: |
-          docker build -t backend-image:latest ./backend
+        run: docker build -t backend-image:latest ./backend
 
       - name: Build frontend image
-        run: |
-          docker build -t frontend-image:latest ./frontend
+        run: docker build -t frontend-image:latest ./frontend
 
       - name: Install Trivy
         run: |
@@ -90,25 +73,18 @@ jobs:
           wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.52.2_Linux-64bit.deb
           sudo dpkg -i trivy_0.52.2_Linux-64bit.deb
 
-      - name: Scan backend image with Trivy
-        run: |
-          trivy image --severity HIGH,CRITICAL --exit-code 1 backend-image:latest
+      - name: Scan backend image
+        run: trivy image --severity HIGH,CRITICAL --exit-code 1 backend-image:latest
 
-      - name: Scan frontend image with Trivy
-        run: |
-          trivy image --severity HIGH,CRITICAL --exit-code 1 frontend-image:latest
+      - name: Scan frontend image
+        run: trivy image --severity HIGH,CRITICAL --exit-code 1 frontend-image:latest
 
-
-  # --------------------------------------------------
-  # Step 4: Push built images to AWS ECR
-  # --------------------------------------------------
   push-to-ecr:
     needs: docker-build-and-scan
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
