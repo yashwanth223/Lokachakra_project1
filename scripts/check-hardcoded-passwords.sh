@@ -52,6 +52,8 @@ for PATTERN in "${PATTERNS[@]}"; do
     --binary-files=without-match \
     "${GREP_EXCLUDES[@]}" \
     "$PATTERN" . 2>/dev/null || true)
+    | grep -v "check-hardcoded-passwords.sh" \
+    || true)
 
   if [ -n "$MATCHES" ]; then
     echo " WARNING: Suspicious pattern found for '$PATTERN':"
