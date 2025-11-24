@@ -7,7 +7,7 @@ echo " Running hardcoded password & secret scan..."
 EXCLUDE_DIRS=(".github" ".git" "node_modules" "frontend/dist" "backend/.next")
 
 # Files to ignore (scanner shouldn't scan itself) — use basename so --exclude works reliably
-EXCLUDE_FILES=("check-hardcoded-passwords.sh")
+EXCLUDE_FILES="--exclude=scripts/check-hardcoded-passwords.sh --exclude=package-lock.json --exclude=yarn.lock --exclude=pnpm-lock.yaml"
 
 # Patterns that indicate possible hardcoded secrets (prefer value-based patterns to avoid false positives)
 PATTERNS=(
