@@ -49,12 +49,10 @@ for PATTERN in "${PATTERNS[@]}"; do
   echo " Searching for pattern: $PATTERN"
 
   MATCHES=$(grep -RInE \
-    --binary-files=without-match \
-    "${GREP_EXCLUDES[@]}" \
-    "$PATTERN" . 2>/dev/null \
-    | grep -v "check-hardcoded-passwords.sh" \
-    || true)
-
+      --binary-files=without-match \
+      "${GREP_EXCLUDES[@]}" \
+      "$PATTERN" . 2>/dev/null \
+      | grep -v "check-hardcoded-passwords.sh" || true)
 
   if [ -n "$MATCHES" ]; then
     echo " WARNING: Suspicious pattern found for '$PATTERN':"
@@ -62,6 +60,7 @@ for PATTERN in "${PATTERNS[@]}"; do
     FOUND=1
   fi
 done
+
 
 if [ "$FOUND" -eq 1 ]; then
   echo " ERROR: Hardcoded secret or password found! Remove it and use GitHub Secrets."
