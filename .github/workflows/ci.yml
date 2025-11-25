@@ -72,18 +72,18 @@ jobs:
       - name: Build backend image
         run: |
           echo "BUILDING BACKEND IMAGE..."
-          docker build -t backend-image:latest backend || exit 1
+          docker build -t backend-image:latest backend
 
       - name: Verify backend image exists
-        run: docker images | grep backend-image || echo "BACKEND IMAGE NOT FOUND"
+        run: docker images | grep backend-image
 
       - name: Build frontend image
         run: |
           echo "BUILDING FRONTEND IMAGE..."
-          docker build -t frontend-image:latest frontend || exit 1
+          docker build -t frontend-image:latest frontend
 
       - name: Verify frontend image exists
-        run: docker images | grep frontend-image || echo "FRONTEND IMAGE NOT FOUND"
+        run: docker images | grep frontend-image
 
       - name: Install Trivy
         run: |
