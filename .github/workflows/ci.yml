@@ -57,9 +57,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
       - name: Build backend image
         run: docker build -t backend-image:latest ./backend
 
@@ -80,6 +77,8 @@ jobs:
 
       - name: Scan frontend image
         run: trivy image --severity HIGH,CRITICAL --exit-code 1 frontend-image:latest
+
+
 
   push-to-ecr:
     needs: docker-build-and-scan
