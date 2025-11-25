@@ -49,11 +49,9 @@ jobs:
             echo "No backend folder"
           fi
 
-
   docker-build-and-scan:
     needs: lint
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -66,24 +64,11 @@ jobs:
           echo "FRONTEND:"
           ls -R frontend
 
-      - name: Set up Docker
-        run: docker --version
-
       - name: Build backend image
-        run: |
-          echo "BUILDING BACKEND IMAGE..."
-          docker build -t backend-image:latest backend
-
-      - name: Verify backend image exists
-        run: docker images | grep backend-image
+        run: docker build -t backend-image:latest backend
 
       - name: Build frontend image
-        run: |
-          echo "BUILDING FRONTEND IMAGE..."
-          docker build -t frontend-image:latest frontend
-
-      - name: Verify frontend image exists
-        run: docker images | grep frontend-image
+        run: docker build -t frontend-image:latest frontend
 
       - name: Install Trivy
         run: |
@@ -100,11 +85,9 @@ jobs:
       - name: Scan frontend image
         run: trivy image --severity HIGH,CRITICAL --exit-code 1 frontend-image:latest
 
-
   push-to-ecr:
     needs: docker-build-and-scan
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
