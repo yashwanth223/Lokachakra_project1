@@ -86,6 +86,14 @@ jobs:
 
       - name: Scan frontend image
         run: trivy image --severity HIGH,CRITICAL --exit-code 1 frontend-image:latest
+      
+      - name: Test Docker environment
+        run: |
+            echo "=== Docker version ==="
+            docker --version
+            echo "=== Docker info ==="
+            docker info
+
 
   push-to-ecr:
     needs: docker-build-and-scan
