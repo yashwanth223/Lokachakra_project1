@@ -67,8 +67,14 @@ jobs:
       - name: Build backend image
         run: docker build -t backend-image:latest backend
 
+      - name: Verify backend image exists
+        run: docker images | grep backend-image || exit 1
+
       - name: Build frontend image
         run: docker build -t frontend-image:latest frontend
+
+      - name: Verify frontend image exists
+        run: docker images | grep frontend-image || exit 1
 
       - name: Install Trivy
         run: |
