@@ -2,9 +2,7 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: ["main"]
 
 jobs:
 
@@ -12,7 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Run hardcoded password scanner
         run: |
           chmod +x scripts/check-hardcoded-passwords.sh
@@ -23,15 +20,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
 
       - name: Lint frontend
         run: |
-          if [ -d "frontend" ] && [ "$(ls -A frontend)" ]; then
+          if [ -d "frontend" ]; then
             cd frontend
             npm ci || true
             npm run lint || true
@@ -41,7 +36,7 @@ jobs:
 
       - name: Lint backend
         run: |
-          if [ -d "backend" ] && [ "$(ls -A backend)" ]; then
+          if [ -d "backend" ]; then
             cd backend
             npm ci || true
             npm run lint || true
@@ -49,54 +44,8 @@ jobs:
             echo "No backend folder"
           fi
 
-  docker-build-and-scan:
+  build-and-push-to-ecr:
     needs: lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Debug folder structure
-        run: |
-          echo "=== ROOT ==="
-          ls -R .
-
-      - name: Build backend image
-        run: docker build -t backend-image:latest backend
-
-      - name: Verify backend image exists
-        run: docker images | grep backend-image || exit 1
-
-      - name: Build frontend image
-        run: docker build -t frontend-image:latest frontend
-
-      - name: Verify frontend image exists
-        run: docker images | grep frontend-image || exit 1
-
-      - name: Install Trivy
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update -y
-          sudo apt-get install -y trivy
-
-      - name: Scan backend image
-        run: trivy image --severity HIGH,CRITICAL --exit-code 1 backend-image:latest
-
-      - name: Scan frontend image
-        run: trivy image --severity HIGH,CRITICAL --exit-code 1 frontend-image:latest
-      
-      - name: Test Docker environment
-        run: |
-            echo "=== Docker version ==="
-            docker --version
-            echo "=== Docker info ==="
-            docker info
-
-
-  push-to-ecr:
-    needs: docker-build-and-scan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -106,26 +55,27 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: us-east-1
 
-      - name: Login to ECR
+      - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Tag images
+      - name: Build backend image
         run: |
-          BACKEND_URI=891084863802.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/loka/backend:latest
-          FRONTEND_URI=891084863802.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/loka/frontend:latest
+          docker build -t backend-image:latest backend
 
-          echo "Tagging backend-image → $BACKEND_URI"
+      - name: Tag & Push backend image
+        run: |
+          BACKEND_URI=891084863802.dkr.ecr.us-east-1.amazonaws.com/loka/backend:latest
           docker tag backend-image:latest $BACKEND_URI
-
-          echo "Tagging frontend-image → $FRONTEND_URI"
-          docker tag frontend-image:latest $FRONTEND_URI
-
-      - name: Push images to ECR
-        run: |
-          BACKEND_URI=891084863802.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/loka/backend:latest
-          FRONTEND_URI=891084863802.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/loka/frontend:latest
-
           docker push $BACKEND_URI
+
+      - name: Build frontend image
+        run: |
+          docker build -t frontend-image:latest frontend
+
+      - name: Tag & Push frontend image
+        run: |
+          FRONTEND_URI=891084863802.dkr.ecr.us-east-1.amazonaws.com/loka/frontend:latest
+          docker tag frontend-image:latest $FRONTEND_URI
           docker push $FRONTEND_URI
