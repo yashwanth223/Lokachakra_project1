@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Run hardcoded password scanner
         run: |
           chmod +x scripts/check-hardcoded-passwords.sh
@@ -97,30 +98,26 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1    # hard-coded because your repos are here
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Login to Amazon ECR
+      - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      # 🔥 Hard-coded URLs used here (YOUR REAL ECR PATHS)
       - name: Tag images
         run: |
-          BACKEND_URI=891084863802.dkr.ecr.us-east-1.amazonaws.com/loka/backend:latest
-          FRONTEND_URI=891084863802.dkr.ecr.us-east-1.amazonaws.com/loka/frontend:latest
+          BACKEND_URI=891084863802.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/loka/backend:latest
+          FRONTEND_URI=891084863802.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/loka/frontend:latest
 
-          echo "Tagging backend-image:latest → $BACKEND_URI"
+          echo "Tagging backend-image → $BACKEND_URI"
           docker tag backend-image:latest $BACKEND_URI
 
-          echo "Tagging frontend-image:latest → $FRONTEND_URI"
+          echo "Tagging frontend-image → $FRONTEND_URI"
           docker tag frontend-image:latest $FRONTEND_URI
 
       - name: Push images to ECR
         run: |
-          BACKEND_URI=891084863802.dkr.ecr.us-east-1.amazonaws.com/loka/backend:latest
-          FRONTEND_URI=891084863802.dkr.ecr.us-east-1.amazonaws.com/loka/frontend:latest
+          BACKEND_URI=891084863802.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/loka/backend:latest
+          FRONTEND_URI=891084863802.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/loka/frontend:latest
 
-          echo "Pushing backend → $BACKEND_URI"
           docker push $BACKEND_URI
-
-          echo "Pushing frontend → $FRONTEND_URI"
           docker push $FRONTEND_URI
