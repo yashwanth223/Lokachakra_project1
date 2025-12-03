@@ -40,3 +40,16 @@ Step 5:
   HIGH vulnerabilities
   CRITICAL vulnerabilities
  - To prevent deploying insecure images.
+
+1 Ec2 instance 
+frontend -> Ngnix
+backed -> Container
+Req:
+Lo.in -> EC2 
+1st req -> Ec2 
+
+
+Backend only from Ec2, Localhost
+security 
+ Service connections -> for secrets congin -> connection estblsi
+
