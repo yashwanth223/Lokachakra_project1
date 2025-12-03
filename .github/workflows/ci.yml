@@ -3,9 +3,9 @@ name: CI Pipeline
 on:
   push:
     branches: ["main"]
-
+#Development branch and PR 
 jobs:
-
+#Code clone
   secret-scan:
     runs-on: ubuntu-latest
     steps:
@@ -43,7 +43,9 @@ jobs:
           else
             echo "No backend folder"
           fi
-
+#Build seperate and push to ecr seperate 
+#Code clone, Sonarcube -> Ec2 instance 
+#code scan, build scan , Iterat
   build-and-push-to-ecr:
     needs: lint
     runs-on: ubuntu-latest
